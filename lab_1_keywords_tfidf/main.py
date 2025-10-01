@@ -9,10 +9,7 @@ import math
 from typing import Any
 
 
-def check_list(
-        user_input: Any,
-        elements_type: type,
-        can_be_empty: bool) -> bool:
+def check_list(user_input: Any, elements_type: type, can_be_empty: bool) -> bool:
     """
     Check if the object is a list containing elements of a certain type.
 
@@ -32,11 +29,7 @@ def check_list(
 
 
 
-def check_dict(
-        user_input: Any,
-        key_type: type,
-        value_type: type,
-        can_be_empty: bool) -> bool:
+def check_dict(user_input: Any, key_type: type, value_type: type, can_be_empty: bool) -> bool:
     """
     Check if the object is a dictionary with keys and values of given types.
 
@@ -107,9 +100,7 @@ def clean_and_tokenize(text: str) -> list[str] | None:
     return tokens
 
 
-def remove_stop_words(
-        tokens: list[str],
-        stop_words: list[str]) -> list[str] | None:
+def remove_stop_words(tokens: list[str], stop_words: list[str]) -> list[str] | None:
     """
     Exclude stop words from the token sequence.
 
@@ -146,15 +137,13 @@ def calculate_frequencies(tokens: list[str]) -> dict[str, int] | None:
     return frequencies
 
 
-def get_top_n(frequencies: dict[str, int | float],
-              top: int) -> list[str] | None:
+def get_top_n(frequencies: dict[str, int | float], top: int) -> list[str] | None:
     """
     Extract the most frequent tokens.
 
     Args:
 
-        frequencies (dict[str, int | float]):
-            A dictionary with tokens and their frequencies
+        frequencies (dict[str, int | float]): A dictionary with tokens and their frequencies
         top (int): Number of tokens to extract
 
     Returns:
@@ -187,10 +176,7 @@ def calculate_tf(frequencies: dict[str, int]) -> dict[str, float] | None:
     return {token: word_count / dict_length for token, word_count in frequencies.items()}
 
 
-def calculate_tfidf(
-    term_freq: dict[str, float],
-    idf: dict[str, float]
-) -> dict[str, float] | None:
+def calculate_tfidf(term_freq: dict[str, float], idf: dict[str, float]) -> dict[str, float] | None:
     """
     Calculate TF-IDF score for tokens.
 
@@ -215,8 +201,7 @@ def calculate_expected_frequency(
     doc_freqs: dict[str, int], corpus_freqs: dict[str, int]
 ) -> dict[str, float] | None:
     """
-    Calculate expected frequency for tokens based on document
-        and corpus frequencies.
+    Calculate expected frequency for tokens based on document and corpus frequencies.
 
     Args:
         doc_freqs (dict[str, int]): Token frequencies in document
@@ -237,30 +222,6 @@ def calculate_expected_frequency(
         word_in_corpus = corpus_freqs.get(word, 0)
         expected_frequency[word] = ((word_in_doc + word_in_corpus) * total_doc) / total
     return dict(sorted(expected_frequency.items()))
-
-    if not doc_freqs:
-        return None
-    if not (check_dict(doc_freqs, str, int, True) and
-            check_dict(corpus_freqs, str, int, True)):
-        return None
-
-    total_doc_words = sum(doc_freqs.values())
-    total_corpus_words = sum(corpus_freqs.values())
-
-    expected_freqs = {}
-    for word in doc_freqs:
-        doc_count = doc_freqs[word]
-        corpus_count = corpus_freqs.get(word, 0)
-        other_doc_words = total_doc_words - doc_count
-        other_corpus_words = total_corpus_words - corpus_count
-
-        expected_freqs[word] = (
-            (doc_count + corpus_count) *
-            (doc_count + other_doc_words) /
-            (doc_count + corpus_count + other_doc_words + other_corpus_words)
-        )
-
-    return expected_freqs
 
 
 def calculate_chi_values(

@@ -3,6 +3,16 @@ Spellcheck starter
 """
 
 # pylint:disable=unused-variable, duplicate-code, too-many-locals
+from lab_1_keywords_tfidf.main import clean_and_tokenize, remove_stop_words
+from lab_2_spellcheck.main import (
+    build_vocabulary,
+    calculate_distance,
+    calculate_frequency_distance,
+    calculate_jaro_winkler_distance,
+    calculate_levenshtein_distance,
+    find_correct_word,
+    find_out_of_vocab_words,
+)
 
 
 import os
@@ -65,87 +75,51 @@ def main() -> None:
         ) as f5,
     ):
         sentences = [f.read() for f in (f1, f2, f3, f4, f5)]
-
     tokens = clean_and_tokenize(text) or []
     tokens_without_stopwords = remove_stop_words(tokens, stop_words) or []
+    tokens_vocab = build_vocabulary(tokens_without_stopwords) or {}
+    print(tokens_vocab)
 
-    vocab = build_vocabulary(tokens_without_stopwords) or {}
-    print(f"Vocabulary size: {len(vocab)}")
+    tokens_not_in_vocab = find_out_of_vocab_words(tokens_without_stopwords, tokens_vocab) or []
+    print(tokens_not_in_vocab)
 
-    out_of_vocab = find_out_of_vocab_words(
-        tokens_without_stopwords, vocab
-    ) or []
-    print(f"Out of vocabulary words: {len(out_of_vocab)}")
+    jaccard_distance = calculate_distance("кот", {"кот": 0.5, "пёс": 0.5},
+                                                 method = "jaccard") or {}
+    print(jaccard_distance)
 
     alphabet = list("абвгдеёжзийклмнопрстуфхцчшщъыьэюя")
+    freq_distances = calculate_frequency_distance("маладой", tokens_vocab, alphabet) or {}
+    print(freq_distances)
 
-    if vocab:
-        sample_tokens = list(vocab.keys())
-        if len(sample_tokens) >= 2:
-            word1 = sample_tokens[0]
-            word2 = sample_tokens[1]
-            jaccard_dist = calculate_distance(
-                word1, {word1: 0.1, word2: 0.2}, "jaccard"
-            )
-            print(
-                f"Jaccard distance between '{word1}' "
-                f"and '{word2}': {jaccard_dist}"
-            )
+    levenshtein_distance = calculate_levenshtein_distance("кот", "кто")
+    print(levenshtein_distance)
 
-            lev_dist = calculate_levenshtein_distance(word1, word2)
-            print(
-                f"Levenshtein distance between '{word1}' "
-                f"and '{word2}': {lev_dist}"
-            )
-            jw_dist = calculate_jaro_winkler_distance(word1, word2)
-            print(
-                f"Jaro-Winkler distance between '{word1}'"
-                f"and '{word2}': {jw_dist}"
-            )
+    jaro_winkler_distance = calculate_jaro_winkler_distance("кот", "кто")
+    print(jaro_winkler_distance)
+    result = jaro_winkler_distance
 
-        if sample_tokens:
-            freq_dist = calculate_frequency_distance(
-                sample_tokens[0], vocab, alphabet
-            ) or {}
-            print(
-                f"Frequency distance keys for '{sample_tokens[0]}':"
-                f"{list(freq_dist.keys())[:5]}"
-            )
-
-            test_word = out_of_vocab[0] if out_of_vocab else sample_tokens[0]
-
-            jaccard_correct = find_correct_word(
-                test_word, vocab, "jaccard", alphabet
-            )
-            print(f"Jaccard correction for '{test_word}': {jaccard_correct}")
-
-            freq_correct = find_correct_word(
-                test_word, vocab, "frequency-based", alphabet
-            )
-            print(f"Frequency correction for '{test_word}': {freq_correct}")
-
-            lev_correct = find_correct_word(
-                test_word, vocab, "levenshtein", alphabet
-            )
-            print(f"Levenshtein correction for '{test_word}': {lev_correct}")
-
-            jw_correct = find_correct_word(
-                test_word, vocab, "jaro-winkler", alphabet
-            )
-            print(f"Jaro-Winkler correction for '{test_word}': {jw_correct}")
-
-    all_misspelled = []
+    all_wrong_words = []
     for sentence in sentences:
-        sent_tokens = clean_and_tokenize(sentence) or []
-        sent_out_of_vocab = find_out_of_vocab_words(sent_tokens, vocab) or []
-        all_misspelled.extend(sent_out_of_vocab)
+        sentence_tokens = clean_and_tokenize(sentence) or []
+        out_of_vocab = find_out_of_vocab_words(sentence_tokens, tokens_vocab) or []
+        all_wrong_words.extend(out_of_vocab)
+    unique_wrong_words = sorted(set(all_wrong_words))
 
-    result = len(set(all_misspelled))
-    print(f"Total misspelled words found: {result}")
-
-    assert result is not None, "Misspelled words count is None"
-    assert isinstance(result, int), "Misspelled words count should be integer"
-    assert result >= 0, "Misspelled words count cannot be negative"
+    for wrong_word in unique_wrong_words:
+        print(f"Исправления для слова '{wrong_word}':")
+        correct_word = find_correct_word(wrong_word, tokens_vocab, "jaccard", alphabet)
+        if correct_word and correct_word != wrong_word:
+            print(f"jaccard: {correct_word}")
+        correct_word = find_correct_word(wrong_word, tokens_vocab, "frequency-based", alphabet)
+        if correct_word and correct_word != wrong_word:
+            print(f"frequency-based: {correct_word}")
+        correct_word = find_correct_word(wrong_word, tokens_vocab, "levenshtein", alphabet)
+        if correct_word and correct_word != wrong_word:
+            print(f"levenshtein: {correct_word}")
+        correct_word = find_correct_word(wrong_word, tokens_vocab, "jaro-winkler", alphabet)
+        if correct_word and correct_word != wrong_word:
+            print(f"jaro-winkler: {correct_word}")
+    assert result, "Result is None"
 
 
 if __name__ == "__main__":
